@@ -16,6 +16,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 
+#include "rgb_matrix_map.h"
+
+#define INDICATOR_HSV HSV_GOLD
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -48,25 +52,80 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [1] = LAYOUT(
-        _______, KC_MYCM, KC_WHOM, KC_CALC, KC_MSEL, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, KC_MUTE, KC_VOLD, KC_VOLU, _______, _______,          _______,
-        RGB_TOG, RGB_HUI, RGB_SAI, RGB_SPI, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_DEL,           RESET,
-        _______, RGB_HUD, RGB_SAD, RGB_SPD, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
-        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          _______,
+        _______, _______, TG(2),   TG(3),   _______, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, KC_MUTE, KC_VOLD, KC_VOLU, _______, _______,          _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_DEL,           KC_INS,
+        _______, RGB_TOG, RGB_HUI, RGB_SAI, RGB_SPI, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+        _______, _______, RGB_HUD, RGB_SAD, RGB_SPD, _______, _______, _______, _______, _______, _______, _______,          _______,          _______,
         _______,          _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, RGB_VAI, _______,
         _______, _______, _______,                            _______,                            _______, _______, _______, RGB_RMOD, RGB_VAD, RGB_MOD
     ),
 
+    [2] = LAYOUT(
+        KC_PWR,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_SLEP,          _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          _______,
+        _______,          _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, _______, _______,
+        _______, _______, _______,                            _______,                            _______, _______, _______, _______, _______, _______
+    ),
+
+    [3] = LAYOUT(
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          RESET,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          DEBUG,
+        _______,          _______, _______, _______, _______, _______, NK_TOGG, _______, _______, _______, _______,          _______, _______, EEPROM_RESET,
+        _______, _______, _______,                            _______,                            _______, _______, _______, _______, _______, _______
+    ),
 
 };
 // clang-format on
 
 #ifdef ENCODER_ENABLE
 bool encoder_update_user(uint8_t index, bool clockwise) {
-    if (clockwise) {
-      tap_code(KC_VOLU);
-    } else {
-      tap_code(KC_VOLD);
+    switch (get_highest_layer(layer_state)) {
+        case 0:
+            clockwise ? tap_code(KC_VOLU) : tap_code(KC_VOLD); // Base: Volume
+            break;
+
+        case 1:
+            clockwise ? tap_code(KC_WH_U) : tap_code(KC_WH_D); // Fn: Scroll
+            break;
+
+        default:
+            break;
     }
+
     return true;
 }
 #endif // ENCODER_ENABLE
+
+
+void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    HSV indicator_hsv = {INDICATOR_HSV};
+    indicator_hsv.v = rgb_matrix_get_val();
+    RGB indicator_rgb = hsv_to_rgb(indicator_hsv);
+
+    if (IS_HOST_LED_ON(USB_LED_CAPS_LOCK)) {
+        rgb_matrix_set_color(LED_ESC, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+
+        for (uint8_t i = led_min; i <= led_max; i++) {
+            if (g_led_config.flags[i] & LED_FLAG_UNDERGLOW) {
+                rgb_matrix_set_color(i, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+            }
+        }
+    }
+
+    if (IS_LAYER_ON(1)) {
+        rgb_matrix_set_color(LED_FN, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+        rgb_matrix_set_color(LED_F1, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+    }
+
+    if (IS_LAYER_ON(2)) {
+        rgb_matrix_set_color(LED_F2, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+    }
+
+    if (IS_LAYER_ON(3)) {
+        rgb_matrix_set_color(LED_F3, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+    }
+}
