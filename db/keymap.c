@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "rgb_matrix_map.h"
 
-#define INDICATOR_HSV 150, 255, 255
+#define INDICATOR_HSV 160, 255, 255
 #define INDICATOR_UNDERGLOW_HSV HSV_GOLD
 
 // clang-format off
