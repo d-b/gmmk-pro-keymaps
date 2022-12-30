@@ -18,7 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "rgb_matrix_map.h"
 
-#define INDICATOR_HSV HSV_GOLD
+#define INDICATOR_HSV 150, 255, 255
+#define INDICATOR_UNDERGLOW_HSV HSV_GOLD
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -102,18 +103,23 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    uint8_t val = rgb_matrix_get_val();
     HSV indicator_hsv = {INDICATOR_HSV};
-    indicator_hsv.v = rgb_matrix_get_val();
+    HSV indicator_underglow_hsv = {INDICATOR_UNDERGLOW_HSV};
+    indicator_hsv.v = val;
+    indicator_underglow_hsv.v = val;
     RGB indicator_rgb = hsv_to_rgb(indicator_hsv);
+    RGB indicator_underglow_rgb = hsv_to_rgb(indicator_underglow_hsv);
 
     if (IS_HOST_LED_ON(USB_LED_CAPS_LOCK)) {
-        rgb_matrix_set_color(LED_ESC, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
-
         for (uint8_t i = led_min; i <= led_max; i++) {
-            if (g_led_config.flags[i] & LED_FLAG_UNDERGLOW) {
+            if (g_led_config.flags[i] & LED_FLAG_UNDERGLOW)
+                rgb_matrix_set_color(i, indicator_underglow_rgb.r, indicator_underglow_rgb.g, indicator_underglow_rgb.b);
+            else
                 rgb_matrix_set_color(i, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
-            }
         }
+
+        rgb_matrix_set_color(LED_F12, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
     }
 
     if (IS_LAYER_ON(1)) {
