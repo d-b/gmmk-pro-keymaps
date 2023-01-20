@@ -133,6 +133,9 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
     if (IS_LAYER_ON(3)) {
         rgb_matrix_set_color(LED_F3, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
+
+        if (keymap_config.nkro)
+          rgb_matrix_set_color(LED_N, indicator_rgb.r, indicator_rgb.g, indicator_rgb.b);
     }
 
     return false;
